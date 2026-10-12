@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.brian.shopee-export</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/python3</string>
+        <string>/Users/salesops/shopee_scheduled_export.py</string>
+    </array>
+
+    <!-- Every day at 00:00 (system clock is already Asia/Jakarta / WIB) -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>0</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/salesops</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>LowPriorityIO</key>
+    <true/>
+    <key>Nice</key>
+    <integer>5</integer>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/shopee_export.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/shopee_export_error.log</string>
+</dict>
+</plist>
