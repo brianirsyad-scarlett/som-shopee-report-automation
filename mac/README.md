@@ -12,9 +12,9 @@ session on that Mac -- the login/scrape cannot run on a GitHub runner.
 | Verify the raw files all reached GCS, repair gaps, then ask for a rebuild | **Mac** `shopee_guard.py` (launchd 04:30, also called by the export) |
 | Build `Shopee_bq.parquet` and upload it to GCS | **GitHub Actions only** (`../build_bq_parquet.py`, workflow `shopee-bq-pipeline.yml`) |
 
-Since 2026-10-12 the Mac no longer uploads `Shopee_bq.parquet`: `request_github_parquet_rebuild()` in
+Since 2026-10-12 the Mac builds **no** Parquet at all: `request_github_parquet_rebuild()` in
 `shopee_scheduled_export.py` runs `shopee_guard.py --rebuild-only`, which dispatches the workflow
-(90-minute cooldown, skipped if a run is already queued). The Mac still writes local `Shopee.parquet` /
-`Shopee_bq.parquet` into OneDrive for local Power BI use only.
+(90-minute cooldown, skipped if a run is already queued). Power BI reads `Shopee_bq.parquet` from GCS.
+The old local `shopee_parquet_converters.py` was removed (it is still in git history).
 
 `launchd/` holds copies of the LaunchAgent plists (install to ~/Library/LaunchAgents/).

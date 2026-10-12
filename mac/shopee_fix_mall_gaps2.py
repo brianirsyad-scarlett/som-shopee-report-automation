@@ -92,25 +92,11 @@ def main():
         finally:
             context.close()
 
-    parquet_ok = False
     try:
-        sse.log("Rebuilding combined Parquet files (Shopee.parquet, Shopee_bq.parquet)...")
-        import shopee_parquet_converters
-        skipped = shopee_parquet_converters.convert_both()
-        parquet_ok = True
-        if skipped:
-            sse.log(f"Parquet rebuild complete WITH WARNINGS: {len(skipped)} file(s) skipped -- {skipped}")
-        else:
-            sse.log("Parquet rebuild complete.")
+        sse.request_github_parquet_rebuild()
+        sse.log("Asked GitHub Actions to rebuild Shopee_bq.parquet")
     except Exception:
-        sse.log(f"ERROR rebuilding Parquet files:\n{traceback.format_exc()}")
-
-    if parquet_ok:
-        try:
-            sse.request_github_parquet_rebuild()
-            sse.log("Asked GitHub Actions to rebuild Shopee_bq.parquet")
-        except Exception:
-            sse.log(f"ERROR uploading Shopee_bq.parquet to GCS:\n{traceback.format_exc()}")
+        sse.log(f"ERROR asking GitHub to rebuild Shopee_bq.parquet:\n{traceback.format_exc()}")
 
     sse.log("=== Shopee Mall gap-fix run 2 complete ===")
 

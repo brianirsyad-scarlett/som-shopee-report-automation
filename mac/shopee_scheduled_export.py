@@ -13,9 +13,9 @@ destination (no extra subfolder, no leftover .zip).
 
 After both shops are downloaded, every .xlsx in each "Seller Data" folder is
 converted to .csv into the sibling "Shopee Star"/"Shopee Mall" folder (mirrors
-the existing csv_converter.py in each of those folders), and finally both
-combined Parquet files (Shopee.parquet, Shopee_bq.parquet) are rebuilt from
-all historical CSVs via shopee_parquet_converters.py.
+the existing csv_converter.py in each of those folders), and finally GitHub
+Actions (som-shopee-report-automation) is asked to rebuild Shopee_bq.parquet from the raw files in
+GCS. This Mac builds no Parquet at all any more.
 
 Stale month-to-date files (yesterday's date range, now superseded by today's)
 are deleted before writing fresh ones -- on both the .xlsx and .csv side --
@@ -636,20 +636,6 @@ def main():
         log(f"shopee_guard finished with exit code {guard.returncode}")
     except Exception:
         log(f"ERROR running shopee_guard:\n{traceback.format_exc()}")
-
-    parquet_ok = False
-    try:
-        log("Rebuilding combined Parquet files (Shopee.parquet, Shopee_bq.parquet)...")
-        import shopee_parquet_converters
-        skipped = shopee_parquet_converters.convert_both()
-        parquet_ok = True
-        if skipped:
-            log(f"Parquet rebuild complete WITH WARNINGS: {len(skipped)} file(s) skipped "
-                f"(stuck OneDrive sync?) -- {skipped}")
-        else:
-            log("Parquet rebuild complete.")
-    except Exception:
-        log(f"ERROR rebuilding Parquet files:\n{traceback.format_exc()}")
 
     try:
         request_github_parquet_rebuild()
