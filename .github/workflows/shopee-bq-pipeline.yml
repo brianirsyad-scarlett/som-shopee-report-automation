@@ -16,6 +16,11 @@ on:
     - cron: "0 18 * * *"   # 01:00 WIB
     - cron: "0 20 * * *"   # 03:00 WIB
 
+permissions:
+  contents: read
+  actions: read
+  issues: write   # notify opens a MAIL| issue; Power Automate mails it
+
 concurrency:
   group: shopee-bq-pipeline
   cancel-in-progress: false
@@ -24,6 +29,7 @@ env:
   GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcp_key.json
   PYTHONIOENCODING: utf-8
   RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  GITHUB_TOKEN: ${{ github.token }}
   SMTP_USER: ${{ secrets.SMTP_USER }}
   SMTP_APP_PASSWORD: ${{ secrets.SMTP_APP_PASSWORD }}
   NOTIFY_TO: ${{ vars.NOTIFY_TO || 'brian.rinaldy@lmbg.co.id' }}
