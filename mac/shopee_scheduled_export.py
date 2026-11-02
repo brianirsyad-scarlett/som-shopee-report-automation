@@ -122,7 +122,15 @@ def switch_shop(page, target_username):
     # just DOM-ready is enough since we only need the header and then hit the API directly.
     page.goto(ORDERS_PAGE, wait_until="domcontentloaded", timeout=60000)
     page.wait_for_timeout(1500)
+    # The header name renders asynchronously and can be slow: a single read right
+    # after the switch returned None on 2026-10-13 and the whole Star shop was
+    # skipped for the night. Poll for it before deciding the switch failed.
     new_current = get_current_shop_username(page)
+    for _ in range(6):
+        if new_current == target_username:
+            break
+        page.wait_for_timeout(5000)
+        new_current = get_current_shop_username(page)
     if new_current != target_username:
         raise RuntimeError(f"Switch to '{target_username}' failed (still on {new_current!r})")
     return page
@@ -287,7 +295,7 @@ def run_one(page, spc_cds, shop, label, start_date, end_date, clear_stale_start=
     created = throttled_request_report(page, spc_cds, start_date, end_date, f"{shop}/{label}")
     report_id = created["report_id"]
     log(f"  report_id={report_id} records~={created.get('record_numbers')}")
-    poll_report(page, spc_cds, report_id, max_wait_seconds=900)
+    poll_report(page, spc_cds, report_id, max_wait_seconds=2400)
     destination_dir = SHOP_DESTINATIONS[shop]
     removed_conflicts = clean_sync_conflict_copies(destination_dir)
     if removed_conflicts:
@@ -587,12 +595,20 @@ def main():
                 sys.exit(1)
 
             for shop in SHOPS:
-                try:
-                    switch_shop(page, shop)
-                    spc_cds = get_spc_cds(context)
-                except Exception:
-                    log(f"ERROR switching to shop {shop}, skipping it entirely this run:\n"
-                        f"{traceback.format_exc()}")
+                switched = False
+                for attempt in range(1, 4):
+                    try:
+                        switch_shop(page, shop)
+                        spc_cds = get_spc_cds(context)
+                        switched = True
+                        break
+                    except Exception:
+                        log(f"ERROR switching to shop {shop} (attempt {attempt}/3):\n"
+                            f"{traceback.format_exc()}")
+                        time.sleep(15)
+                if not switched:
+                    log(f"ERROR: could not switch to shop {shop} after 3 attempts, "
+                        f"skipping it entirely this run")
                     continue
 
                 # Each step gets its own try/except: a failure downloading one

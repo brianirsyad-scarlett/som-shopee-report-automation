@@ -18,3 +18,9 @@ Since 2026-10-12 the Mac builds **no** Parquet at all: `request_github_parquet_r
 The old local `shopee_parquet_converters.py` was removed (it is still in git history).
 
 `launchd/` holds copies of the LaunchAgent plists (install to ~/Library/LaunchAgents/).
+
+**Slow Mall reports (2026-11-02):** Shopee generates a shop's reports one after another, so a big chunk (~99k orders) can
+take longer than the nightly job waits and the chunks queued behind it time out too -- while still generating on
+Shopee's side. `shopee_collect_chunks.py <shop> <label:start:end[:report_id]> ...` collects such reports by id (or
+requests them), then run `shopee_guard.py` to convert, upload and ask GitHub for a rebuild. The per-report wait in
+`shopee_scheduled_export.py` is now 2400 s (was 900 s).
