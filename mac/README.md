@@ -24,3 +24,8 @@ take longer than the nightly job waits and the chunks queued behind it time out 
 Shopee's side. `shopee_collect_chunks.py <shop> <label:start:end[:report_id]> ...` collects such reports by id (or
 requests them), then run `shopee_guard.py` to convert, upload and ask GitHub for a rebuild. The per-report wait in
 `shopee_scheduled_export.py` is now 2400 s (was 900 s).
+
+**Last month is refreshed only early in the month (2026-11-09):** the nightly job re-downloads the previous month only on
+days 1-7 of a month (`PREVIOUS_MONTH_REFRESH_DAYS` in `shopee_scheduled_export.py`), while its orders are still
+changing status; afterwards only the month-to-date reports run. Before this the run took ~11 h every night. To force a
+refresh of last month on any day: `SHOPEE_FORCE_PREVIOUS_MONTH=1 python3 shopee_scheduled_export.py`.

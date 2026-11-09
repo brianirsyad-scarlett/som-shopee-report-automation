@@ -62,6 +62,10 @@ import pandas as pd  # noqa: E402
 SHOPS = ["scarlett_whitening", "scarlettofficialshop"]
 SHOP_LIST_PAGE = f"{BASE_URL}/portal/shop"
 MIN_GAP_SECONDS = 65  # small buffer over Shopee's ~60s minimum between report requests
+# Last month is re-downloaded nightly only during the first days of a month, while its orders are still changing status
+# (returns, completions). Re-downloading all of it every night made the run take ~11 h (2026-11-09) and Mall's big reports queue
+# behind each other. Set SHOPEE_FORCE_PREVIOUS_MONTH=1 to refresh it on any day.
+PREVIOUS_MONTH_REFRESH_DAYS = 7
 
 ANCHANTO_ROOT = (
     "/Users/salesops/Library/CloudStorage/OneDrive-PT.OptoLumbungSejahtera"
@@ -571,7 +575,12 @@ def main():
     log("=== Scheduled Shopee export run starting ===")
     ensure_onedrive_running()
     log(f"month_to_date period: {mtd_start} -> {mtd_end}")
-    log(f"previous_month period: {pm_start} -> {pm_end}")
+    refresh_pm = today.day <= PREVIOUS_MONTH_REFRESH_DAYS or os.environ.get("SHOPEE_FORCE_PREVIOUS_MONTH") == "1"
+    if refresh_pm:
+        log(f"previous_month period: {pm_start} -> {pm_end} (refreshing: day {today.day} of the month)")
+    else:
+        log(f"previous_month {pm_start} -> {pm_end}: not refreshed tonight (only on days 1-{PREVIOUS_MONTH_REFRESH_DAYS} "
+            "of a month; its files in GCS are final)")
 
     with sync_playwright() as p:
         context = p.chromium.launch_persistent_context(
@@ -621,10 +630,11 @@ def main():
                 except Exception:
                     log(f"ERROR downloading {shop}/month_to_date:\n{traceback.format_exc()}")
 
-                try:
-                    run_chunked(page, spc_cds, shop, "previous_month", pm_start, pm_end)
-                except Exception:
-                    log(f"ERROR downloading {shop}/previous_month:\n{traceback.format_exc()}")
+                if refresh_pm:
+                    try:
+                        run_chunked(page, spc_cds, shop, "previous_month", pm_start, pm_end)
+                    except Exception:
+                        log(f"ERROR downloading {shop}/previous_month:\n{traceback.format_exc()}")
 
                 try:
                     convert_xlsx_to_csv(shop, mtd_start)
